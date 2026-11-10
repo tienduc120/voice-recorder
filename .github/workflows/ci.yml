@@ -1,0 +1,82 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          install-only: true
+
+      - name: Install analysis tools
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          go install github.com/arch-go/arch-go/v2@v2.1.2
+
+      # The same gate the pre-push hook runs: vet, analyzers, strict lint, race tests, layer rules, govulncheck,
+      # and the proof that every rule fires on its fixture.
+      - name: Verify
+        run: go run ./tools/agentctl verify --full
+
+      - name: Commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          for sha in $(git rev-list "origin/${BASE_REF}..HEAD"); do
+            git log -1 --format=%B "$sha" > "${RUNNER_TEMP}/msg"
+            go run ./tools/agentctl commitmsg "${RUNNER_TEMP}/msg"
+          done
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          install-only: true
+
+      - name: Install analysis tools
+        run: go install github.com/arch-go/arch-go/v2@v2.1.2
+
+      # go test -race needs cgo on Windows; the runner image ships MinGW-w64, and this step fails loudly if it ever stops doing so.
+      - name: C compiler
+        run: gcc --version
+
+      # The Windows-only adapters are invisible to the Linux job; this runs the same fast gate on them.
+      - name: Verify
+        shell: bash
+        env:
+          CGO_ENABLED: "1"
+        run: go run ./tools/agentctl verify

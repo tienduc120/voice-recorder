@@ -1,0 +1,11 @@
+# Local, uncommitted working notes and scratch
+.local/
+
+# agentctl logs and built helper binaries
+.agentctl/
+
+# Claude Code reads skills through this link to .agents/skills; `agentctl skills link` makes it
+.claude/skills
+
+# Personal Claude Code settings
+.claude/settings.local.json
