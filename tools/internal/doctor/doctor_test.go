@@ -189,8 +189,6 @@ func TestDefaultToolsParseRealOutput(t *testing.T) {
 			"golangci-lint has version 2.15.0 built with go1.27.0 from 25c5369a on 2026-10-16T11:03:09Z",
 			"2.15.0",
 		},
-		"sqlc":        {"v1.31.1", "1.31.1"},
-		"buf":         {"1.74.0", "1.74.0"},
 		"lefthook":    {"2.2.2", "2.2.2"},
 		"gofumpt":     {"v0.12.0 (go1.27.1)", "0.12.0"},
 		"govulncheck": {"Go: go1.27.1 Scanner: govulncheck@v1.9.0", "1.9.0"},
@@ -325,6 +323,25 @@ func TestRender(t *testing.T) {
 	for _, want := range []string{"go", "1.27.2", "sqlc", "missing", "scoop install sqlc"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q:\n%s", want, out)
+		}
+	}
+}
+
+func TestDefaultToolsNeedACCompilerAndNoDatabaseTools(t *testing.T) {
+	t.Parallel()
+
+	byName := map[string]doctor.Tool{}
+	for _, tool := range doctor.DefaultTools("1.27.2") {
+		byName[tool.Name] = tool
+	}
+
+	gcc, ok := byName["gcc"]
+	if !ok || !gcc.Required || !strings.Contains(gcc.Install, "w64devkit") {
+		t.Errorf("gcc = %+v: go test -race needs a C compiler, and the hint must say where to get one", gcc)
+	}
+	for _, gone := range []string{"docker", "sqlc", "buf"} {
+		if _, present := byName[gone]; present {
+			t.Errorf("%s is still required: this app has no database and no contracts", gone)
 		}
 	}
 }

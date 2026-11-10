@@ -104,7 +104,7 @@ func TestDoctorFailsWhenRequiredToolMissing(t *testing.T) {
 	t.Parallel()
 
 	runner := runnerFunc(func(name string, args ...string) (string, error) {
-		if name == "sqlc" {
+		if name == "gcc" {
 			return "", exec.ErrNotFound
 		}
 		return healthy(name, args...)
@@ -114,7 +114,7 @@ func TestDoctorFailsWhenRequiredToolMissing(t *testing.T) {
 	if got.code != 1 {
 		t.Errorf("exit = %d, want 1", got.code)
 	}
-	if !strings.Contains(got.stdout, "missing") || !strings.Contains(got.stdout, "scoop install sqlc") {
+	if !strings.Contains(got.stdout, "missing") || !strings.Contains(got.stdout, "w64devkit") {
 		t.Errorf("report should show the missing tool and how to install it:\n%s", got.stdout)
 	}
 }

@@ -31,10 +31,6 @@ func DefaultTools(goVersion string) []Tool {
 			Install:  "install Git for Windows or your package manager",
 		},
 		{
-			Name: "docker", Command: []string{"docker", flagVersion}, Required: true,
-			Install: "install Docker Desktop or Docker Engine",
-		},
-		{
 			Name: "golangci-lint", Command: []string{"golangci-lint", flagVersion}, Min: "2.15.0", Required: true,
 			// Prebuilt binary: the project advises against go install / go tool for it.
 			Install: "scoop install golangci-lint",
@@ -57,18 +53,13 @@ func DefaultTools(goVersion string) []Tool {
 			Install:  "scoop install lefthook",
 		},
 		{
-			Name:     "sqlc",
-			Command:  []string{"sqlc", cmdVersion},
-			Min:      "1.31.1",
+			// go test -race needs cgo on Windows; nothing else does.
+			Name:     "gcc",
+			Command:  []string{"gcc", flagVersion},
 			Required: true,
-			Install:  "scoop install sqlc",
-		},
-		{
-			Name:     "buf",
-			Command:  []string{"buf", flagVersion},
-			Min:      "1.74.0",
-			Required: true,
-			Install:  "scoop install buf",
+			Install: "go test -race needs cgo on Windows: install MSYS2's mingw-w64-x86_64-gcc, or w64devkit from " +
+				"https://github.com/skeeto/w64devkit/releases, and put its bin folder on PATH " +
+				"(the shipped .exe is pure Go and needs nothing)",
 		},
 		{
 			// arch-go reports "master" as its version, so only presence is checked.
