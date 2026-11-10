@@ -45,5 +45,6 @@ This app stands on public work. Material that is copied or adapted is listed in 
 | [pprof-analyzer-mcp](https://github.com/ZephyrDeng/pprof-analyzer-mcp) | ZephyrDeng | machine-readable pprof findings for agents |
 | [yet-another-agent-harness](https://github.com/dirien/yet-another-agent-harness) | dirien | command guards and secret scanning as agent hooks |
 | [agents-md-cookbook](https://github.com/Taiizor/agents-md-cookbook) | Taiizor | shape of a Go `AGENTS.md` |
+| [Audio EQ Cookbook](https://www.w3.org/TR/audio-eq-cookbook/) (W3C document licence) | Robert Bristow-Johnson | the high-pass filter's biquad coefficients |
 
 Also: [AGENTS.md](https://agents.md) as the shared agent instruction format, and Factory's article [Using linters to direct agents](https://www.factory.ai/using-linters-to-direct-agents).
