@@ -180,26 +180,27 @@ func (r *Recorder) Resume(ctx context.Context) (Status, error) {
 func (r *Recorder) Stop(ctx context.Context) (Status, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.stopLocked(ctx)
+	return r.stopLocked(ctx, true)
 }
 
 func (r *Recorder) Quit(ctx context.Context) error {
 	r.mu.Lock()
 	if r.session.State() != domain.Idle {
-		_, _ = r.stopLocked(ctx)
+		_, _ = r.stopLocked(ctx, true)
 	}
 	r.mu.Unlock()
 	r.deps.Quit()
 	return nil
 }
 
-func (r *Recorder) stopLocked(ctx context.Context) (Status, error) {
+// stopLocked ends the recording. keepQueued writes the blocks still queued, unless a write has just failed.
+func (r *Recorder) stopLocked(ctx context.Context, keepQueued bool) (Status, error) {
 	wasRecording := r.session.State() == domain.Recording
 	if err := r.session.Stop(r.deps.Clock.Now()); err != nil {
 		return r.statusLocked(), conflict(err)
 	}
 	r.closeStream(ctx)
-	r.drainFrames(ctx, wasRecording)
+	r.drainFrames(ctx, keepQueued && wasRecording)
 	r.finishFile(ctx)
 	r.deps.Awake.Release()
 	r.level = 0
@@ -285,17 +286,19 @@ func (r *Recorder) saveSettings(ctx context.Context) {
 	}
 }
 
-func (r *Recorder) refreshDevices(ctx context.Context) {
+// refreshDevices keeps the last good list when listing fails, and says whether it got a new one.
+func (r *Recorder) refreshDevices(ctx context.Context) bool {
 	devices, err := r.deps.Mics.List(ctx)
 	if err != nil {
 		r.deps.Logger.WarnContext(ctx, "list mics", "error", err)
-		return
+		return false
 	}
 	mics := make([]domain.Mic, 0, len(devices))
 	for _, d := range devices {
 		mics = append(mics, domain.NewMic(domain.MicID(d.ID), d.Name, d.IsDefault))
 	}
 	r.devices = mics
+	return true
 }
 
 func (r *Recorder) folderCheck(folder string) string {

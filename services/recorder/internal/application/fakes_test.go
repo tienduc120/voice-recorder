@@ -54,6 +54,11 @@ func (c *fakeClock) Advance(d time.Duration) {
 	c.now = c.now.Add(d)
 }
 
+// bubbleClock reads time.Now, which synctest fakes, so the recorded time and the ticker move together.
+type bubbleClock struct{}
+
+func (bubbleClock) Now() time.Time { return time.Now() }
+
 type fakeMics struct {
 	mu      sync.Mutex
 	devices []application.Device
@@ -75,11 +80,12 @@ func (m *fakeMics) set(devices ...application.Device) {
 }
 
 type fakeStream struct {
-	id     string
-	ev     *events
-	lost   chan struct{}
-	mu     sync.Mutex
-	closes int
+	id       string
+	ev       *events
+	lost     chan struct{}
+	lostOnce sync.Once
+	mu       sync.Mutex
+	closes   int
 }
 
 func (s *fakeStream) Lost() <-chan struct{} { return s.lost }
@@ -91,6 +97,9 @@ func (s *fakeStream) Close() error {
 	s.ev.add("stream.close")
 	return nil
 }
+
+// loseDevice is what a capture adapter does when the device stops by itself.
+func (s *fakeStream) loseDevice() { s.lostOnce.Do(func() { close(s.lost) }) }
 
 func (s *fakeStream) closeCount() int {
 	s.mu.Lock()
@@ -127,10 +136,10 @@ func (c *fakeCapture) openedIDs() []string {
 	return slices.Clone(c.opened)
 }
 
-func (c *fakeCapture) stream(i int) *fakeStream {
+func (c *fakeCapture) firstStream() *fakeStream {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.streams[i]
+	return c.streams[0]
 }
 
 // send hands the recorder one block, as the capture adapter would.
@@ -184,6 +193,12 @@ func (f *fakeFile) Close() error {
 	f.mu.Unlock()
 	f.ev.add("file.close")
 	return err
+}
+
+func (f *fakeFile) failWrites(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.writeErr = err
 }
 
 type fileCounts struct{ writes, flushes, closes int }

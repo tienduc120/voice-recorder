@@ -102,7 +102,7 @@ func TestPauseFlushesAndResumeContinuesTheSameFile(t *testing.T) {
 
 	paused := mustStatus(t)(rec.Pause(t.Context()))
 	flushes := d.files.first().counts().flushes
-	if paused.State != application.StatePaused || flushes != 1 || d.capture.stream(0).closeCount() != 0 {
+	if paused.State != application.StatePaused || flushes != 1 || d.capture.firstStream().closeCount() != 0 {
 		t.Errorf("state %q, flushes %d: want paused, flushed, and the mic still open", paused.State, flushes)
 	}
 
@@ -145,9 +145,9 @@ func TestStopFinalisesTheFileAndLetsGoOfTheMicAndSleep(t *testing.T) {
 
 	closes := d.files.first().counts().closes
 	releases := d.awake.counts().releases
-	if closes != 1 || d.capture.stream(0).closeCount() != 1 || releases != 1 {
+	if closes != 1 || d.capture.firstStream().closeCount() != 1 || releases != 1 {
 		t.Errorf("file closes %d, mic closes %d, sleep releases %d: want 1 each",
-			closes, d.capture.stream(0).closeCount(), releases)
+			closes, d.capture.firstStream().closeCount(), releases)
 	}
 	want := application.FileInfo{Name: "2026-11-09_1030_retro.ogg", Size: fakeSize}
 	if st.State != application.StateIdle || st.File != want {
