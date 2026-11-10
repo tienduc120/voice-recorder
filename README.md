@@ -29,6 +29,7 @@ This app stands on public work. Material that is copied or adapted is listed in 
 - [go-base](https://github.com/tienduc120/go-base) by Luu Tien Duc (MIT): the layout, gates, analyzers, `agentctl`, skills and platform packages this code base is built on.
 - The Go team and community: the language, toolchain, standard library, `go vet`, and [golang.org/x/tools](https://pkg.go.dev/golang.org/x/tools) (the analysis framework behind our custom analyzers).
 - Developer tools we run, not copy: [golangci-lint](https://github.com/golangci/golangci-lint), [gofumpt](https://github.com/mvdan/gofumpt), [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck), [lefthook](https://github.com/evilmartians/lefthook) (Evil Martians), [arch-go](https://github.com/arch-go/arch-go).
+- [go-wca](https://github.com/moutend/go-wca) by Yoshiyuki Koyanagi and [go-ole](https://github.com/go-ole/go-ole) by Yasuhiro Matsumoto (both MIT): pure-Go WASAPI and COM, the mic capture (ADR-0020).
 - [go-opus](https://github.com/skrashevich/go-opus) by Sergey Krashevich (Apache-2.0), the [Opus](https://opus-codec.org/) reference implementation transpiled to Go: the SILK speech encoder and the tests' decoder (ADR-0019).
 - [rnnoise-go](https://github.com/VoiceBlender/rnnoise-go) (BSD-3-Clause), a pure-Go port of [RNNoise](https://gitlab.xiph.org/xiph/rnnoise) by Jean-Marc Valin and Xiph.Org: the noise cleanup (ADR-0018).
 - [goleak](https://github.com/uber-go/goleak) by Uber (MIT): the `TestMain` check that fails a package whose tests leave a goroutine running.

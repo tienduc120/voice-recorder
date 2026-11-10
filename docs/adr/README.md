@@ -23,5 +23,6 @@ One file per decision, numbered, never edited after acceptance (supersede it wit
 | [0017](0017-what-this-app-leaves-out-of-go-base.md) | What this app leaves out of go-base | accepted |
 | [0018](0018-noise-cleanup-with-rnnoise-go.md) | Noise cleanup with rnnoise-go | accepted |
 | [0019](0019-opus-encoding-with-go-opus-in-silk-mode.md) | Opus encoding with go-opus in SILK mode | accepted |
+| [0020](0020-audio-capture-with-go-wca.md) | Audio capture with go-wca | accepted |
 
 Needs an ADR first: a new external dependency, a hosted service, a pinned major version moving, or a change to a published contract.
