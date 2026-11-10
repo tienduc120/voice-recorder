@@ -22,5 +22,6 @@ One file per decision, numbered, never edited after acceptance (supersede it wit
 | [0016](0016-aggregate-roots-are-marked-and-have-a-typed-id-new-and-resto.md) | Aggregate roots are marked and have a typed id, New, and Restore | accepted |
 | [0017](0017-what-this-app-leaves-out-of-go-base.md) | What this app leaves out of go-base | accepted |
 | [0018](0018-noise-cleanup-with-rnnoise-go.md) | Noise cleanup with rnnoise-go | accepted |
+| [0019](0019-opus-encoding-with-go-opus-in-silk-mode.md) | Opus encoding with go-opus in SILK mode | accepted |
 
 Needs an ADR first: a new external dependency, a hosted service, a pinned major version moving, or a change to a published contract.

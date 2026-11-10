@@ -4,6 +4,7 @@ go 1.27.2
 
 require (
 	github.com/VoiceBlender/rnnoise-go v0.3.0
+	github.com/skrashevich/go-opus v0.1.1
 	go.uber.org/goleak v1.3.0
 )
 
