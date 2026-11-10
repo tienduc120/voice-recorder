@@ -1,1 +1,90 @@
-body { font-family: system-ui, sans-serif; }
+:root {
+  color-scheme: light dark;
+  --rec: #c62828;
+  --meter-off: #8884;
+  --meter-on: #2e7d32;
+}
+
+body {
+  font: 15px/1.4 system-ui, "Segoe UI", sans-serif;
+  margin: 0;
+}
+
+main {
+  max-width: 34rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+h1 {
+  font-size: 1.3rem;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 7rem 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.field input[type="text"],
+.field select {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.field input[type="checkbox"] {
+  grid-column: 2;
+  justify-self: start;
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+button {
+  padding: 0.35rem 0.8rem;
+}
+
+.readout {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+#state.recording {
+  color: var(--rec);
+  font-weight: bold;
+}
+
+.meter {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.meter span {
+  width: 0.6rem;
+  height: 0.9rem;
+  background: var(--meter-off);
+}
+
+.meter span.on {
+  background: var(--meter-on);
+}
+
+#notice {
+  min-height: 1.4em;
+}
+
+.tip {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+.quit {
+  text-align: right;
+}

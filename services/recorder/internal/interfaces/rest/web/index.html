@@ -1,3 +1,50 @@
 <!doctype html>
-<title>Voice Recorder</title>
-<button id="start">Start</button>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voice Recorder</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>Voice Recorder</h1>
+
+    <div class="field">
+      <label for="folder">Save to</label>
+      <input id="folder" type="text" spellcheck="false" autocomplete="off">
+      <button id="browse" type="button">Browse</button>
+    </div>
+    <div class="field">
+      <label for="mic">Mic</label>
+      <select id="mic"></select>
+    </div>
+    <div class="field">
+      <label for="title">Title</label>
+      <input id="title" type="text" placeholder="optional" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="cleanup">Noise cleanup</label>
+      <input id="cleanup" type="checkbox">
+    </div>
+
+    <div class="controls">
+      <button id="start" type="button">● Start</button>
+      <button id="pause" type="button">❚❚ Pause</button>
+      <button id="stop" type="button">■ Stop</button>
+    </div>
+
+    <p class="readout">
+      <span id="state">Idle</span>
+      <span id="timer">00:00:00</span>
+      <span id="level" class="meter" role="meter" aria-label="Input level" aria-valuemin="0" aria-valuemax="10"></span>
+    </p>
+    <p id="notice" role="status"></p>
+    <p id="last"></p>
+    <p id="tip" class="tip">Tip: closing the lid may sleep the laptop.</p>
+
+    <div class="quit"><button id="quit" type="button">Quit</button></div>
+  </main>
+</body>
+</html>

@@ -270,3 +270,18 @@ func TestPingNamesTheApp(t *testing.T) {
 		t.Errorf("ping = %+v, want %+v", got, want)
 	}
 }
+
+func TestThePageHasEveryControl(t *testing.T) {
+	t.Parallel()
+
+	page := send(t, &fakeRecorder{}, http.MethodGet, "/", "").Body.String()
+
+	for _, id := range []string{
+		"folder", "browse", "mic", "title", "cleanup", "start", "pause", "stop",
+		"state", "timer", "level", "notice", "last", "tip", "quit",
+	} {
+		if !strings.Contains(page, `id="`+id+`"`) {
+			t.Errorf("the page has no element with id %q", id)
+		}
+	}
+}
