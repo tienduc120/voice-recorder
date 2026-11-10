@@ -29,6 +29,7 @@ This app stands on public work. Material that is copied or adapted is listed in 
 - [go-base](https://github.com/tienduc120/go-base) by Luu Tien Duc (MIT): the layout, gates, analyzers, `agentctl`, skills and platform packages this code base is built on.
 - The Go team and community: the language, toolchain, standard library, `go vet`, and [golang.org/x/tools](https://pkg.go.dev/golang.org/x/tools) (the analysis framework behind our custom analyzers).
 - Developer tools we run, not copy: [golangci-lint](https://github.com/golangci/golangci-lint), [gofumpt](https://github.com/mvdan/gofumpt), [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck), [lefthook](https://github.com/evilmartians/lefthook) (Evil Martians), [arch-go](https://github.com/arch-go/arch-go).
+- [rnnoise-go](https://github.com/VoiceBlender/rnnoise-go) (BSD-3-Clause), a pure-Go port of [RNNoise](https://gitlab.xiph.org/xiph/rnnoise) by Jean-Marc Valin and Xiph.Org: the noise cleanup (ADR-0018).
 - [goleak](https://github.com/uber-go/goleak) by Uber (MIT): the `TestMain` check that fails a package whose tests leave a goroutine running.
 - [google/pprof](https://github.com/google/pprof) (Apache-2.0): the profile library behind `agentctl perf`. Our analyzer charges each sample to the nearest function in our own code and diffs snapshots on top of it.
 - [golangci-lint-config](https://github.com/maratori/golangci-lint-config) by maratori (MIT): `.golangci.yml` is adapted from it, with the license text kept in [LICENSES/](LICENSES/maratori-golangci-lint-config.txt).

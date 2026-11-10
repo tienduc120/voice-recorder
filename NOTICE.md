@@ -13,8 +13,9 @@ Only MIT, BSD, and Apache-2.0 material is brought in. For each item keep the ups
 - `golang.org/x/tools` (BSD-3-Clause), the analysis framework behind our analyzers.
 - `github.com/google/pprof` (Apache-2.0), the profile parser and diff behind `agentctl perf`.
 - `go.uber.org/goleak` (MIT, Copyright (c) 2018 Uber Technologies, Inc.), the goroutine-leak check in `TestMain`.
+- `github.com/VoiceBlender/rnnoise-go` v0.3.0 (BSD-3-Clause; Copyright (c) 2007-2017, 2024 Jean-Marc Valin, (c) 2023 Amazon, (c) 2017 Mozilla, (c) 2005-2017 Xiph.Org Foundation, (c) 2003-2004 Mark Borgerding), the noise cleanup, a port of Xiph's RNNoise with its trained weights, and its dependency `golang.org/x/sys` (BSD-3-Clause, The Go Authors). Linked into the shipped exe, so these notices travel with it.
 
-`golang.org/x/tools` and `github.com/google/pprof` are dependencies of the `tools` module only. `goleak` belongs to the root module, which holds the platform and the recorder.
+`golang.org/x/tools` and `github.com/google/pprof` are dependencies of the `tools` module only. `goleak` and the audio libraries belong to the root module, which holds the platform and the recorder.
 
 ## Developer tools (installed, not copied)
 
