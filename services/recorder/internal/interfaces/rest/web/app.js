@@ -29,8 +29,6 @@ let current = null;
 let micsShown = "";
 let errorText = "";
 let errorUntil = 0;
-let statusTimer = 0;
-let levelTimer = 0;
 
 const meter = { target: 0, shown: 0, peak: 0, peakAt: 0, lit: -1, cells: [] };
 
@@ -151,6 +149,7 @@ function render(s) {
   renderMics(s);
   setUnlessEditing($("folder"), () => { $("folder").value = s.folder; });
   setUnlessEditing($("cleanup"), () => { $("cleanup").checked = s.noiseCleanup; });
+  $("title").placeholder = s.defaultName;
   for (const id of ["folder", "browse", "title", "cleanup"]) $(id).disabled = !idle;
 
   $("start").disabled = !idle || s.folderProblem !== "";
@@ -174,7 +173,7 @@ async function pollStatus() {
   } catch {
     $("notice").textContent = "Voice Recorder is not running.";
   }
-  statusTimer = window.setTimeout(pollStatus, STATUS_MS);
+  window.setTimeout(pollStatus, STATUS_MS);
 }
 
 async function pollLevel() {
@@ -186,7 +185,7 @@ async function pollLevel() {
       meter.target = 0;
     }
   }
-  levelTimer = window.setTimeout(pollLevel, LEVEL_MS);
+  window.setTimeout(pollLevel, LEVEL_MS);
 }
 
 // send runs a command; the reply is the new status, or the reason it was refused.
@@ -223,30 +222,14 @@ async function browse() {
   }
 }
 
-async function quit() {
-  const busy = current && current.state !== "idle";
-  if (busy && !window.confirm("A recording is in progress. Stop it, save it and quit?")) return;
-  const res = await fetch("/api/quit", { method: "POST" }).catch(() => null);
-  if (res && res.status === 204) {
-    window.clearTimeout(statusTimer);
-    window.clearTimeout(levelTimer);
-    const done = document.createElement("p");
-    done.className = "quit-done";
-    done.textContent = "Voice Recorder has quit. You can close this tab.";
-    document.body.replaceChildren(done);
-  } else {
-    showError("Could not quit.");
-  }
-}
-
 $("folder").addEventListener("change", saveSettings);
 $("cleanup").addEventListener("change", saveSettings);
 $("mic").addEventListener("change", () => send("PUT", "/api/mic", { id: $("mic").value }));
 $("browse").addEventListener("click", browse);
+$("open-folder").addEventListener("click", () => send("POST", "/api/open-folder"));
 $("start").addEventListener("click", () => send("POST", "/api/start", { title: $("title").value }));
 $("pause").addEventListener("click", () => send("POST", current && current.state === "paused" ? "/api/resume" : "/api/pause"));
 $("stop").addEventListener("click", () => send("POST", "/api/stop"));
-$("quit").addEventListener("click", quit);
 document.addEventListener("keydown", (e) => {
   // Space toggles recording when no field has focus: the one control used most in a meeting.
   if (e.code !== "Space" || e.target !== document.body || !current) return;

@@ -5,15 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>Voice Recorder</title>
+  <link rel="icon" href="favicon.ico">
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
 </head>
 <body>
   <main class="deck">
     <header class="brand">
-      <span class="brand-mark" aria-hidden="true"></span>
       <h1>Voice Recorder</h1>
-      <button id="quit" class="ghost" type="button">Quit</button>
     </header>
 
     <section class="display" aria-label="Recorder">
@@ -54,6 +53,7 @@
         <div class="field-row">
           <input id="folder" type="text" spellcheck="false" autocomplete="off">
           <button id="browse" class="small" type="button">Browse</button>
+          <button id="open-folder" class="small" type="button" title="Show this folder in File Explorer">Open</button>
         </div>
       </div>
       <div class="field field-wide">
@@ -62,17 +62,13 @@
       </div>
       <div class="field">
         <label for="title">Title</label>
-        <input id="title" type="text" placeholder="optional, e.g. sprint planning" autocomplete="off">
+        <input id="title" type="text" autocomplete="off">
       </div>
       <div class="field field-switch">
         <label for="cleanup">Noise cleanup</label>
         <input id="cleanup" class="switch" type="checkbox" role="switch">
       </div>
     </section>
-
-    <footer>
-      <p id="tip" class="tip">Tip: closing the lid may put the laptop to sleep.</p>
-    </footer>
   </main>
 </body>
 </html>

@@ -46,6 +46,11 @@ func (f *fakeRecorder) Browse(context.Context) (application.BrowseResult, error)
 	return f.browse, f.err
 }
 
+func (f *fakeRecorder) OpenFolder(context.Context) error {
+	f.calls = append(f.calls, "open-folder")
+	return f.err
+}
+
 func (f *fakeRecorder) Start(_ context.Context, cmd application.StartCommand) (application.Status, error) {
 	f.calls = append(f.calls, fmt.Sprintf("start %q", cmd.Title))
 	return f.status, f.err
@@ -126,14 +131,15 @@ func TestStatusIsReturnedAsJSON(t *testing.T) {
 	t.Parallel()
 
 	rec := &fakeRecorder{status: application.Status{
-		State:    application.StateRecording,
-		Recorded: 2537 * time.Second,
-		Level:    0.5,
-		Folder:   `C:\Rec`,
-		Mics:     []application.Device{{ID: "usb", Name: "USB Microphone", IsDefault: true}},
-		MicID:    "usb",
-		File:     application.FileInfo{Name: "2026-11-09_1030_sprint-planning.ogg", Size: 10276044},
-		Notice:   application.Notice{Kind: application.NoticeMicConnected, Mic: "USB Microphone"},
+		State:       application.StateRecording,
+		Recorded:    2537 * time.Second,
+		Level:       0.5,
+		Folder:      `C:\Rec`,
+		Mics:        []application.Device{{ID: "usb", Name: "USB Microphone", IsDefault: true}},
+		MicID:       "usb",
+		File:        application.FileInfo{Name: "2026-11-09_1030_sprint-planning.ogg", Size: 10276044},
+		Notice:      application.Notice{Kind: application.NoticeMicConnected, Mic: "USB Microphone"},
+		DefaultName: "2026-11-09_1031.ogg",
 	}}
 
 	w := send(t, rec, http.MethodGet, "/api/status", "")
@@ -145,6 +151,7 @@ func TestStatusIsReturnedAsJSON(t *testing.T) {
 		"micId":        "usb",
 		"file":         map[string]any{"name": "2026-11-09_1030_sprint-planning.ogg", "size": 10276044.0},
 		"notice":       map[string]any{"kind": "mic-connected", "mic": "USB Microphone", "previousMic": ""},
+		"defaultName":  "2026-11-09_1031.ogg",
 	}
 	if got := decode(t, w); w.Code != http.StatusOK || !reflect.DeepEqual(got, want) {
 		t.Errorf("status %d body %+v, want 200 %+v", w.Code, got, want)
@@ -165,6 +172,7 @@ func TestEachCommandReachesItsUseCase(t *testing.T) {
 		{http.MethodPut, "/api/settings", `{"folder":"C:\\Rec","noiseCleanup":false}`, `settings "C:\\Rec" false`, http.StatusOK},
 		{http.MethodPut, "/api/mic", `{"id":"usb"}`, `mic "usb"`, http.StatusOK},
 		{http.MethodPost, "/api/browse", "", "browse", http.StatusOK},
+		{http.MethodPost, "/api/open-folder", "", "open-folder", http.StatusNoContent},
 		{http.MethodPost, "/api/quit", "", "quit", http.StatusNoContent},
 	} {
 		t.Run(tc.path, func(t *testing.T) {
@@ -245,9 +253,10 @@ func TestThePageIsServedFromTheBinaryWithSafeHeaders(t *testing.T) {
 	t.Parallel()
 
 	for path, contentType := range map[string]string{
-		"/":          "text/html; charset=utf-8",
-		"/app.js":    "text/javascript; charset=utf-8",
-		"/style.css": "text/css; charset=utf-8",
+		"/":            "text/html; charset=utf-8",
+		"/app.js":      "text/javascript; charset=utf-8",
+		"/style.css":   "text/css; charset=utf-8",
+		"/favicon.ico": "image/x-icon",
 	} {
 		w := send(t, &fakeRecorder{}, http.MethodGet, path, "")
 
@@ -261,6 +270,28 @@ func TestThePageIsServedFromTheBinaryWithSafeHeaders(t *testing.T) {
 	}
 	if w := send(t, &fakeRecorder{}, http.MethodGet, "/", ""); !strings.Contains(w.Body.String(), `id="start"`) {
 		t.Error("the page lacks its Start button")
+	}
+}
+
+func TestTheIconIsAWindowsIcon(t *testing.T) {
+	t.Parallel()
+
+	w := send(t, &fakeRecorder{}, http.MethodGet, "/favicon.ico", "")
+
+	if !strings.HasPrefix(w.Body.String(), "\x00\x00\x01\x00") {
+		t.Errorf("favicon starts %q, want an ICO header", w.Body.String()[:min(4, w.Body.Len())])
+	}
+	if page := send(
+		t,
+		&fakeRecorder{},
+		http.MethodGet,
+		"/",
+		"",
+	).Body.String(); !strings.Contains(
+		page,
+		`href="favicon.ico"`,
+	) {
+		t.Error("the page does not link its icon")
 	}
 }
 
@@ -280,11 +311,17 @@ func TestThePageHasEveryControl(t *testing.T) {
 	page := send(t, &fakeRecorder{}, http.MethodGet, "/", "").Body.String()
 
 	for _, id := range []string{
-		"folder", "browse", "mic", "title", "cleanup", "start", "pause", "stop",
-		"state", "timer", "level", "notice", "last", "tip", "quit",
+		"folder", "browse", "open-folder", "mic", "title", "cleanup", "start", "pause", "stop",
+		"state", "timer", "level", "notice", "last",
 	} {
 		if !strings.Contains(page, `id="`+id+`"`) {
 			t.Errorf("the page has no element with id %q", id)
+		}
+	}
+	// The owner took these off the page; the quit endpoint stays for scripts.
+	for _, id := range []string{"quit", "tip"} {
+		if strings.Contains(page, `id="`+id+`"`) {
+			t.Errorf("the page still has the element with id %q", id)
 		}
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -30,6 +31,20 @@ type fakeHW struct {
 	browserURLs []string
 	alerts      []string
 	opened      int
+	folders     []string
+}
+
+func (f *fakeHW) Open(_ context.Context, folder string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.folders = append(f.folders, folder)
+	return nil
+}
+
+func (f *fakeHW) openedFolders() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]string(nil), f.folders...)
 }
 
 func (f *fakeHW) urls() []string {
@@ -78,6 +93,7 @@ func fakeHardware(t *testing.T) (hardware, *fakeHW) {
 		mics:    noMics{},
 		capture: countingCapture{hw: f},
 		picker:  noPicker{},
+		opener:  f,
 		awake:   idleAwake{},
 		captureRun: func(ctx context.Context) error {
 			<-ctx.Done()
@@ -213,6 +229,23 @@ func TestQuitFromThePageStopsTheApp(t *testing.T) {
 		done <- nil
 	case <-time.After(5 * time.Second):
 		t.Error("the app kept running after Quit")
+	}
+}
+
+func TestOpenFolderShowsTheSaveFolder(t *testing.T) {
+	t.Parallel()
+
+	hw, f := fakeHardware(t)
+	a, _, _ := start(t, testConfig(t), hw)
+	base := "http://" + a.api.Addr()
+
+	if code, body := request(t, http.MethodPost, base+"/api/open-folder", base); code != http.StatusNoContent {
+		t.Fatalf("open folder: %d %s, want 204", code, body)
+	}
+
+	want := []string{filepath.Join(hw.documentsDir, "Recordings")}
+	if got := f.openedFolders(); !reflect.DeepEqual(got, want) {
+		t.Errorf("opened %q, want %q", got, want)
 	}
 }
 

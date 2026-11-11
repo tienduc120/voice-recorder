@@ -50,6 +50,8 @@ type Status struct {
 	MicID  string
 	File   FileInfo
 	Notice Notice
+	// DefaultName is the name a recording started now without a title would get.
+	DefaultName string
 }
 
 func stateOf(s domain.State) State {

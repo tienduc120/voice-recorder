@@ -70,6 +70,11 @@ type FolderPicker interface {
 	Pick(ctx context.Context, start string) (folder string, chosen bool, err error)
 }
 
+// FolderOpener shows a folder in File Explorer.
+type FolderOpener interface {
+	Open(ctx context.Context, folder string) error
+}
+
 // SleepGuard keeps Windows from sleeping while held.
 type SleepGuard interface {
 	Hold()

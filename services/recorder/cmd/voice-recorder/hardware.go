@@ -16,6 +16,7 @@ type hardware struct {
 	mics    application.Microphones
 	capture application.Capture
 	picker  application.FolderPicker
+	opener  application.FolderOpener
 	awake   sleepGuard
 	// captureRun is the capture adapter's loop: it owns the COM thread the mic streams live on.
 	captureRun   func(ctx context.Context) error

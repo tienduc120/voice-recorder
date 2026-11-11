@@ -27,6 +27,7 @@ type Recorder interface {
 	Level(ctx context.Context) float64
 	ChangeSettings(ctx context.Context, cmd application.SettingsCommand) (application.Status, error)
 	Browse(ctx context.Context) (application.BrowseResult, error)
+	OpenFolder(ctx context.Context) error
 	Start(ctx context.Context, cmd application.StartCommand) (application.Status, error)
 	Pause(ctx context.Context) (application.Status, error)
 	Resume(ctx context.Context) (application.Status, error)
@@ -47,6 +48,7 @@ func NewHandler(rec Recorder, logger *slog.Logger) http.Handler {
 	mux.Handle("GET /{$}", asset("web/index.html", "text/html; charset=utf-8"))
 	mux.Handle("GET /app.js", asset("web/app.js", "text/javascript; charset=utf-8"))
 	mux.Handle("GET /style.css", asset("web/style.css", "text/css; charset=utf-8"))
+	mux.Handle("GET /favicon.ico", asset("web/favicon.ico", "image/x-icon"))
 	mux.HandleFunc("GET /api/ping", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, pingResponse{App: AppName})
 	})
@@ -64,7 +66,8 @@ func NewHandler(rec Recorder, logger *slog.Logger) http.Handler {
 	mux.HandleFunc("PUT /api/settings", h.settings)
 	mux.HandleFunc("PUT /api/mic", h.mic)
 	mux.HandleFunc("POST /api/browse", h.browse)
-	mux.HandleFunc("POST /api/quit", h.quit)
+	mux.HandleFunc("POST /api/open-folder", h.noContent(h.rec.OpenFolder))
+	mux.HandleFunc("POST /api/quit", h.noContent(h.rec.Quit))
 	return secure(guard(mux))
 }
 
@@ -114,12 +117,14 @@ func (h *handler) browse(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, browseResponse{Folder: res.Folder, Chosen: res.Chosen})
 }
 
-func (h *handler) quit(w http.ResponseWriter, r *http.Request) {
-	if err := h.rec.Quit(r.Context()); err != nil {
-		h.fail(w, r, err)
-		return
+func (h *handler) noContent(useCase func(context.Context) error) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := useCase(r.Context()); err != nil {
+			h.fail(w, r, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	}
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *handler) command(useCase func(context.Context) (application.Status, error)) http.HandlerFunc {

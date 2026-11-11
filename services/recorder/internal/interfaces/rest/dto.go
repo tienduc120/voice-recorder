@@ -13,6 +13,7 @@ type statusDTO struct {
 	MicID         string    `json:"micId"`
 	File          fileDTO   `json:"file"`
 	Notice        noticeDTO `json:"notice"`
+	DefaultName   string    `json:"defaultName"`
 }
 
 type micDTO struct {
@@ -74,5 +75,6 @@ func statusOf(st application.Status) statusDTO {
 		MicID:         st.MicID,
 		File:          fileDTO{Name: st.File.Name, Size: st.File.Size},
 		Notice:        noticeDTO{Kind: string(st.Notice.Kind), Mic: st.Notice.Mic, PreviousMic: st.Notice.PreviousMic},
+		DefaultName:   st.DefaultName,
 	}
 }

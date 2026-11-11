@@ -64,3 +64,42 @@ func TestDocumentsDirIsAnExistingAbsoluteFolder(t *testing.T) {
 		t.Errorf("documents dir %q (%v): want an existing absolute folder", dir, statErr)
 	}
 }
+
+func TestFolderOpenerHandsAFolderToExplorer(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	var opened []string
+	opener := winsys.NewFolderOpenerWith(func(path string) error {
+		opened = append(opened, path)
+		return nil
+	})
+
+	if err := opener.Open(t.Context(), dir); err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(opened, []string{dir}) {
+		t.Errorf("opened %q, want %q", opened, dir)
+	}
+}
+
+func TestFolderOpenerNeverOpensAFile(t *testing.T) {
+	t.Parallel()
+
+	file := filepath.Join(t.TempDir(), "setup.exe")
+	if err := os.WriteFile(file, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var opened []string
+	opener := winsys.NewFolderOpenerWith(func(path string) error {
+		opened = append(opened, path)
+		return nil
+	})
+
+	err := opener.Open(t.Context(), file)
+
+	if err == nil || len(opened) != 0 {
+		t.Errorf("err %v, opened %q: a file must be refused, since opening it would run it", err, opened)
+	}
+}

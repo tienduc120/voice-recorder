@@ -24,6 +24,7 @@ func newHardware(logger *slog.Logger) (hardware, error) {
 		mics:         mics,
 		capture:      mics,
 		picker:       winsys.FolderPicker{},
+		opener:       winsys.FolderOpener{},
 		awake:        winsys.NewSleepGuard(),
 		captureRun:   mics.Run,
 		openBrowser:  winsys.OpenBrowser,

@@ -8,18 +8,23 @@ import (
 
 // OpenBrowser opens url in the default browser.
 func OpenBrowser(url string) error {
+	if err := shellOpen(url); err != nil {
+		return fmt.Errorf("open the browser: %w", err)
+	}
+	return nil
+}
+
+// shellOpen does what double-clicking target in Explorer would.
+func shellOpen(target string) error {
 	verb, err := windows.UTF16PtrFromString("open")
 	if err != nil {
 		return err
 	}
-	target, err := windows.UTF16PtrFromString(url)
+	path, err := windows.UTF16PtrFromString(target)
 	if err != nil {
 		return err
 	}
-	if err = windows.ShellExecute(0, verb, target, nil, nil, windows.SW_SHOWNORMAL); err != nil {
-		return fmt.Errorf("open the browser: %w", err)
-	}
-	return nil
+	return windows.ShellExecute(0, verb, path, nil, nil, windows.SW_SHOWNORMAL)
 }
 
 // Alert shows an error in a message box: the app has no console, so this is how a failed start is seen.

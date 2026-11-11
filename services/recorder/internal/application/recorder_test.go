@@ -271,6 +271,51 @@ func TestBrowseReturnsThePickedFolderWithoutSavingIt(t *testing.T) {
 	}
 }
 
+func TestOpenFolderShowsTheSaveFolderEvenWhileRecording(t *testing.T) {
+	t.Parallel()
+
+	d := newDeps(meetingClock())
+	rec := application.NewRecorder(t.Context(), d.Deps())
+	mustStatus(t)(rec.Start(t.Context(), application.StartCommand{}))
+
+	if err := rec.OpenFolder(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := d.opener.folders(); !reflect.DeepEqual(got, []string{recFolder}) {
+		t.Errorf("opened %q, want the save folder", got)
+	}
+}
+
+func TestOpenFolderRefusesAFolderThatCannotBeUsed(t *testing.T) {
+	t.Parallel()
+
+	d := newDeps(meetingClock())
+	d.files.checkErr = fmt.Errorf("%w: gone", application.ErrFolderNotWritable)
+	rec := application.NewRecorder(t.Context(), d.Deps())
+
+	err := rec.OpenFolder(t.Context())
+
+	if !errors.Is(err, application.ErrInvalidCommand) {
+		t.Errorf("err = %v, want ErrInvalidCommand", err)
+	}
+	if len(d.opener.folders()) != 0 {
+		t.Error("a folder that cannot be used must not be opened")
+	}
+}
+
+func TestStatusNamesTheFileARecordingWithoutATitleWouldGet(t *testing.T) {
+	t.Parallel()
+
+	clock := meetingClock()
+	rec := application.NewRecorder(t.Context(), newDeps(clock).Deps())
+	clock.Advance(time.Minute)
+
+	if got := rec.Status(t.Context()).DefaultName; got != "2026-11-09_1031.ogg" {
+		t.Errorf("default name = %q, want the current minute's name", got)
+	}
+}
+
 func TestQuitWhileRecordingFinalisesBeforeQuitting(t *testing.T) {
 	t.Parallel()
 

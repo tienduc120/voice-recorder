@@ -22,6 +22,7 @@ type Deps struct {
 	Files    AudioFiles
 	Settings SettingsStore
 	Picker   FolderPicker
+	Opener   FolderOpener
 	Awake    SleepGuard
 	Logger   *slog.Logger
 	// Quit asks the app to exit once the use case has finished.
@@ -107,6 +108,21 @@ func (r *Recorder) Browse(ctx context.Context) (BrowseResult, error) {
 		return BrowseResult{}, fmt.Errorf("folder picker: %w", err)
 	}
 	return BrowseResult{Folder: folder, Chosen: chosen}, nil
+}
+
+// OpenFolder works while recording too, so the owner can watch the file grow; the lock is released before Explorer
+// is asked, for the same reason as Browse.
+func (r *Recorder) OpenFolder(ctx context.Context) error {
+	r.mu.Lock()
+	folder := r.settings.Folder
+	r.mu.Unlock()
+	if err := r.deps.Files.CheckFolder(folder); err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidCommand, err)
+	}
+	if err := r.deps.Opener.Open(ctx, folder); err != nil {
+		return fmt.Errorf("open the folder: %w", err)
+	}
+	return nil
 }
 
 func (r *Recorder) Start(ctx context.Context, cmd StartCommand) (Status, error) {
@@ -309,9 +325,10 @@ func (r *Recorder) folderCheck(folder string) string {
 }
 
 func (r *Recorder) statusLocked() Status {
+	now := r.deps.Clock.Now()
 	st := Status{
 		State:         stateOf(r.session.State()),
-		Recorded:      r.session.Recorded(r.deps.Clock.Now()),
+		Recorded:      r.session.Recorded(now),
 		Folder:        r.settings.Folder,
 		FolderProblem: r.folderProblem,
 		NoiseCleanup:  r.settings.NoiseCleanup,
@@ -319,6 +336,7 @@ func (r *Recorder) statusLocked() Status {
 		MicID:         r.settings.MicID,
 		File:          r.lastFile,
 		Notice:        r.notice,
+		DefaultName:   domain.FileName(now, "", 1),
 	}
 	if r.file != nil {
 		st.Level = r.level

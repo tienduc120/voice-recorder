@@ -53,6 +53,7 @@ func newApp(ctx context.Context, logger *slog.Logger, cfg config, hw hardware) (
 		Files:    audiofile.NewFiles(newEncoder, newDenoiser),
 		Settings: store,
 		Picker:   hw.picker,
+		Opener:   hw.opener,
 		Awake:    hw.awake,
 		Logger:   logger,
 		Quit:     a.requestQuit,

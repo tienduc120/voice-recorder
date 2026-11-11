@@ -292,6 +292,24 @@ func (p *fakePicker) Pick(_ context.Context, start string) (string, bool, error)
 	return p.folder, p.chosen, nil
 }
 
+type fakeOpener struct {
+	mu     sync.Mutex
+	opened []string
+}
+
+func (o *fakeOpener) Open(_ context.Context, folder string) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.opened = append(o.opened, folder)
+	return nil
+}
+
+func (o *fakeOpener) folders() []string {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	return slices.Clone(o.opened)
+}
+
 type fakeAwake struct {
 	mu       sync.Mutex
 	holds    int
@@ -325,6 +343,7 @@ type deps struct {
 	files    *fakeFiles
 	settings *fakeSettings
 	picker   *fakePicker
+	opener   *fakeOpener
 	awake    *fakeAwake
 	ev       *events
 }
@@ -347,6 +366,7 @@ func newDeps(clock application.Clock) *deps {
 		files:    &fakeFiles{ev: ev},
 		settings: &fakeSettings{stored: application.Settings{Folder: recFolder, MicID: "usb", NoiseCleanup: true}},
 		picker:   &fakePicker{},
+		opener:   &fakeOpener{},
 		awake:    &fakeAwake{},
 		ev:       ev,
 	}
@@ -360,6 +380,7 @@ func (d *deps) Deps() application.Deps {
 		Files:    d.files,
 		Settings: d.settings,
 		Picker:   d.picker,
+		Opener:   d.opener,
 		Awake:    d.awake,
 		Logger:   slog.New(slog.DiscardHandler),
 		Quit:     func() { d.ev.add("quit") },
