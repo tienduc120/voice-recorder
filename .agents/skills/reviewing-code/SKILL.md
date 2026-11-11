@@ -41,9 +41,7 @@ The gates catch what a tool can name: layer imports, lint, races, leaks, query r
 
 ## 6. Data and queries
 
-- Each query was run through `agentctl db check`: no star, bounded and ordered lists, keyset pagination, an index for every filter (`writing-queries`).
-- A use case that touches the database asserts a query budget. There is no query per row.
-- A migration is new and forward-only, and the old and new code can run together during a deploy.
+- This app has no database (ADR-0017), so there is nothing to check here. A change that adds one brings back go-base's `writing-queries` skill and `agentctl db check` first.
 
 ## 7. Concurrency and resources
 
