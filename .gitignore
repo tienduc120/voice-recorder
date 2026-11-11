@@ -9,3 +9,6 @@
 
 # Personal Claude Code settings
 .claude/settings.local.json
+
+# The built app
+voice-recorder.exe

@@ -16,6 +16,22 @@ lefthook install                   # run the gates on every commit and push
 
 There is no Make. `agentctl` is the single command surface.
 
+## Use
+
+Build the app once; it needs no installer and nothing else on the target laptop:
+
+```sh
+CGO_ENABLED=0 go build -trimpath -ldflags=-H=windowsgui -o voice-recorder.exe ./services/recorder/cmd/voice-recorder
+```
+
+Double-click `voice-recorder.exe`. It opens its page in the default browser at http://127.0.0.1:47811; launching it again opens the same page. Recording carries on if the browser is closed. The app stops only through Quit on the page.
+
+- Recordings go to `Documents\Recordings` unless you choose another folder, named `YYYY-MM-DD_HHMM_title.ogg` (Ogg Opus, mono, about 11 MB an hour).
+- Settings are in `%APPDATA%\VoiceRecorder\config.json`, and the log in `%APPDATA%\VoiceRecorderoice-recorder.log` (the previous run's in `voice-recorder.log.1`).
+- Space starts a recording, then pauses or resumes it, when no field has focus.
+
+Before trusting it with a meeting, run [docs/manual-checklist.md](docs/manual-checklist.md) on the laptop.
+
 ## License
 
 MIT, Copyright (c) 2026 Luu Tien Duc. Free to use, modify, and use commercially. See [LICENSE](LICENSE).
