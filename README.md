@@ -4,10 +4,11 @@ Records meetings on a Windows laptop into small audio files (about 11 MB per hou
 
 ## Get the app
 
-You need Windows 10 or 11.
+Download `voice-recorder.exe` from the [latest release](https://github.com/tienduc120/voice-recorder/releases/latest). It is the whole app: one file, nothing to install. Put it anywhere, for example on the desktop. It runs on Windows 10 and 11.
 
-1. Install [Go](https://go.dev/dl/) and [Git](https://git-scm.com/download/win).
-2. Open PowerShell and run:
+The file is not code-signed, so the first time you run it Windows may say "Windows protected your PC". Click **More info**, then **Run anyway**.
+
+To build it yourself instead, install [Go](https://go.dev/dl/) and [Git](https://git-scm.com/download/win), then in PowerShell:
 
 ```powershell
 git clone https://github.com/tienduc120/voice-recorder.git
@@ -15,8 +16,6 @@ cd voice-recorder
 $env:CGO_ENABLED = "0"
 go build -trimpath -ldflags=-H=windowsgui -o voice-recorder.exe ./services/recorder/cmd/voice-recorder
 ```
-
-3. That makes `voice-recorder.exe`. Copy it anywhere, even to another laptop: it needs nothing else installed.
 
 ## Record a meeting
 
