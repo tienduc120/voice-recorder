@@ -187,6 +187,30 @@ func TestCloseRecordsTheExactLength(t *testing.T) {
 	}
 }
 
+func TestTheEndOfStreamPageCarriesTheLastAudio(t *testing.T) {
+	t.Parallel()
+
+	// 47,140 samples plus the padding fill exactly one 50-packet page, the case where the end could land on a page
+	// of its own with nothing on it.
+	f, path := create(t, realFiles(), false)
+	write(t, f, tone(47140.0/48000))
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	pages := pagesOf(t, path)
+	last := pages[len(pages)-1]
+	if last.Flags&flagEOS == 0 || len(last.Packets) == 0 {
+		t.Errorf("last page flags %#x with %d packets: the end-of-stream page must carry audio, or players "+
+			"cannot apply its end trimming", last.Flags, len(last.Packets))
+	}
+	for i := 3; i < len(pages); i++ {
+		if pages[i].Granule < pages[i-1].Granule {
+			t.Errorf("page %d granule %d is below page %d's %d", i, pages[i].Granule, i-1, pages[i-1].Granule)
+		}
+	}
+}
+
 func TestAFileCutShortStillDecodesUpToTheCut(t *testing.T) {
 	t.Parallel()
 

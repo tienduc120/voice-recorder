@@ -106,6 +106,11 @@ func (f *file) finish() error {
 	preSkip := int64(f.enc.PreSkip())
 	covered := f.samples + preSkip
 	padding := preSkip + (opusenc.FrameSize-covered%opusenc.FrameSize)%opusenc.FrameSize
+	// The page so far goes out first, so the padding lands on the end-of-stream page: a full page there would leave
+	// that page empty, with an end trim no player can apply.
+	if err := f.ogg.Flush(); err != nil {
+		return writeError(err)
+	}
 	if err := f.push(make([]float32, padding)); err != nil {
 		return err
 	}
