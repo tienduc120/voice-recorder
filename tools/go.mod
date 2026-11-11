@@ -1,6 +1,6 @@
 module github.com/tienduc120/voice-recorder/tools
 
-go 1.27.2
+go 1.27.3
 
 require (
 	github.com/google/pprof v0.0.0-20261016150608-1facf8f91b50
