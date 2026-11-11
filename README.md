@@ -31,7 +31,7 @@ Good to know:
 - Plugging in a mic does not switch to it; choose it in the list. If the mic in use is unplugged, recording moves to Windows' default mic, in the same file.
 - **Noise cleanup** (on by default) quiets steady background noise such as fans and air conditioning.
 - Keep the laptop lid open: closing it may put the laptop to sleep.
-- The app keeps running in the background, using about 15 MB of memory. To close it, stop any recording, then end `voice-recorder.exe` in Task Manager.
+- The app keeps running in the background, using about 15 MB of memory, until you press **×** at the top of the page.
 - Settings and the log are in `%APPDATA%\VoiceRecorder`.
 
 ## Develop

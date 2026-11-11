@@ -312,17 +312,18 @@ func TestThePageHasEveryControl(t *testing.T) {
 
 	for _, id := range []string{
 		"folder", "browse", "open-folder", "mic", "title", "cleanup", "start", "pause", "stop",
-		"state", "timer", "level", "notice", "last",
+		"state", "timer", "level", "notice", "last", "quit",
 	} {
 		if !strings.Contains(page, `id="`+id+`"`) {
 			t.Errorf("the page has no element with id %q", id)
 		}
 	}
-	// The owner took these off the page; the quit endpoint stays for scripts.
-	for _, id := range []string{"quit", "tip"} {
-		if strings.Contains(page, `id="`+id+`"`) {
-			t.Errorf("the page still has the element with id %q", id)
-		}
+	// Quit shows only an ×, so its name has to come from the label.
+	if !strings.Contains(page, `aria-label="Quit"`) {
+		t.Error("the quit button has no accessible name")
+	}
+	if strings.Contains(page, `id="tip"`) {
+		t.Error("the page still has the lid tip the owner took off")
 	}
 }
 

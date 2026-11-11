@@ -93,6 +93,43 @@ body {
   color: var(--muted);
 }
 
+.close {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #ffffff1c;
+  background: transparent;
+  color: var(--muted);
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+
+/* The × is drawn, not typed, so it stays centred and crisp in any font. */
+.close::before,
+.close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.close:hover {
+  color: var(--ink);
+  border-color: #ff3b3066;
+  background: #ff3b301a;
+}
+
 /* ---- display ---- */
 
 .display {
@@ -494,6 +531,14 @@ select {
 .switch:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+.quit-done {
+  margin: 30vh auto 0;
+  max-width: 28rem;
+  text-align: center;
+  color: var(--muted);
+  letter-spacing: 0.04em;
 }
 
 @media (max-width: 520px) {
