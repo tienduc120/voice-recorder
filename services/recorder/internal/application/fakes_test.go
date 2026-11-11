@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"slices"
 	"sync"
@@ -59,18 +60,41 @@ type bubbleClock struct{}
 
 func (bubbleClock) Now() time.Time { return time.Now() }
 
+// spinLimit ends a recorder's tight listing loop by letting the list succeed, so the test sees the count instead
+// of hanging.
+const spinLimit = 100
+
 type fakeMics struct {
 	mu      sync.Mutex
 	devices []application.Device
 	err     error
 	calls   int
+	failed  int
 }
 
 func (m *fakeMics) List(context.Context) ([]application.Device, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.calls++
+	if m.err != nil {
+		if m.failed++; m.failed > spinLimit {
+			m.err = nil
+		}
+	}
 	return slices.Clone(m.devices), m.err
+}
+
+func (m *fakeMics) fail(err error) int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.err = err
+	return m.calls
+}
+
+func (m *fakeMics) callCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.calls
 }
 
 func (m *fakeMics) set(devices ...application.Device) {
@@ -114,6 +138,8 @@ type fakeCapture struct {
 	streams []*fakeStream
 	frames  chan<- []float32
 	err     error
+	// refuse is a mic that is listed but will not start, as when another app holds it.
+	refuse string
 }
 
 func (c *fakeCapture) Open(deviceID string, frames chan<- []float32) (application.Stream, error) {
@@ -122,6 +148,9 @@ func (c *fakeCapture) Open(deviceID string, frames chan<- []float32) (applicatio
 	c.opened = append(c.opened, deviceID)
 	if c.err != nil {
 		return nil, c.err
+	}
+	if deviceID == c.refuse {
+		return nil, errors.New("the mic is in use by another app")
 	}
 	c.frames = frames
 	s := &fakeStream{id: deviceID, ev: c.ev, lost: make(chan struct{})}

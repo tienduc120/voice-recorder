@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -192,6 +193,54 @@ func TestChoosingAMicMidRecordingSwitchesInTheSameFile(t *testing.T) {
 	if saves := d.settings.saves(); len(saves) == 0 || saves[len(saves)-1].MicID != "builtin" {
 		t.Errorf("saved %+v: the chosen mic is remembered", saves)
 	}
+}
+
+func TestChoosingAMicThatWillNotStartKeepsRecordingFromTheOldOne(t *testing.T) {
+	t.Parallel()
+
+	d := newDeps(meetingClock())
+	d.capture.refuse = "builtin"
+	rec := application.NewRecorder(t.Context(), d.Deps())
+	mustStatus(t)(rec.Start(t.Context(), application.StartCommand{}))
+
+	st, err := rec.ChooseMic(t.Context(), application.ChooseMicCommand{ID: "builtin"})
+
+	if !errors.Is(err, application.ErrConflict) || !strings.Contains(err.Error(), builtInName) {
+		t.Errorf("err = %v, want ErrConflict naming the mic that would not start", err)
+	}
+	if got := d.capture.openedIDs(); !reflect.DeepEqual(got, []string{"usb", "builtin", "usb"}) {
+		t.Errorf("opened %q, want the old mic back after the new one failed", got)
+	}
+	if st.State != application.StateRecording || st.MicID != "usb" || st.Notice.Kind != "" {
+		t.Errorf("state %q, mic %q, notice %+v: want still recording from the old mic", st.State, st.MicID, st.Notice)
+	}
+	for _, saved := range d.settings.saves() {
+		if saved.MicID == "builtin" {
+			t.Error("a mic that would not start must not be remembered")
+		}
+	}
+}
+
+func TestALostStreamWhileMicsCannotBeListedDoesNotSpin(t *testing.T) {
+	t.Parallel()
+	synctest.Test(t, func(t *testing.T) {
+		d := newDeps(bubbleClock{})
+		rec, _ := startRecording(t, d)
+		before := d.mics.fail(errors.New("the audio service is restarting"))
+
+		d.capture.firstStream().loseDevice()
+		synctest.Wait()
+
+		if calls := d.mics.callCount() - before; calls > 1 {
+			t.Errorf("listed the mics %d times at once: a dead stream must not spin the loop", calls)
+		}
+		if got := d.capture.openedIDs(); !reflect.DeepEqual(got, []string{"usb", "usb"}) {
+			t.Errorf("opened %q: want the same mic reopened from the last good list", got)
+		}
+		if st := rec.Status(t.Context()); st.State != application.StateRecording {
+			t.Errorf("state %q, want recording", st.State)
+		}
+	})
 }
 
 func TestChoosingAnUnknownMicIsAnInvalidCommand(t *testing.T) {
