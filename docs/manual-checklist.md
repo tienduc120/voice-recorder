@@ -12,9 +12,9 @@ To watch memory, start it from a terminal with `DEBUG_ADDR=127.0.0.1:6060` set, 
 
 | # | Check | How | Expected | Result (date, machine, numbers) |
 | --- | --- | --- | --- | --- |
-| 1 | A 2-hour recording | Record a real or simulated 2-hour meeting. Note the file size and the memory at 5 minutes and at 2 hours. | 10–15 MB per hour; memory about 30 MB and flat. | |
+| 1 | A 2-hour recording | Record a real or simulated 2-hour meeting. Note the file size and the memory at 5 minutes and at 2 hours. | 10–15 MB per hour; memory about 30 MB and flat. | 2026-11-11, ASUS desktop + Logi C270: memory 15 MB while recording (owner); the 2-hour run is still to do |
 | 2 | Pause and resume | Pause for a minute, resume, stop. | One file; the timer leaves out the paused minute; the file plays straight through. | 2026-11-11, ASUS desktop + Logi C270: pass (owner) |
-| 3 | Close the browser and reopen it | Mid-recording, close every browser window, wait a minute, open http://127.0.0.1:47811. | Recording carried on; the page shows the live timer and meter. | |
+| 3 | Close the browser and reopen it | Mid-recording, close every browser window, wait a minute, open http://127.0.0.1:47811. | Recording carried on; the page shows the live timer and meter. | 2026-11-11, ASUS desktop: pass (owner) |
 | 4 | Plug in a USB mic, switch to it, unplug it | Mid-recording: plug in a USB mic, read the status line, choose it, talk, unplug it. | Plugging in does not switch; choosing switches within about a second; unplugging falls back to the built-in mic; one file. | |
 | 5 | Kill the process | Mid-recording, end `voice-recorder.exe` in Task Manager. Open the file in VLC. | The file plays up to the last second or so before the kill. | |
 | 6 | Launch the app twice | Double-click the exe while it runs. | The running copy's page opens; there is still one process. | 2026-11-10, ASUS desktop: pass (log: "already running, opening its page") |
