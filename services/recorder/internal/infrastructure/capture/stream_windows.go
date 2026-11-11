@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/moutend/go-wca/pkg/wca"
@@ -18,12 +19,13 @@ type stream struct {
 	event    windows.Handle
 	blocks   *blocker
 	buf      []float32
+	watch    stallWatch
 	lost     chan struct{}
 	lostOnce sync.Once
 }
 
 func startStream(c *Capture, device *wca.IMMDevice, frames chan<- []float32) (*stream, error) {
-	s := &stream{c: c, blocks: newBlocker(frames), lost: make(chan struct{})}
+	s := &stream{c: c, blocks: newBlocker(frames), watch: newStallWatch(time.Now()), lost: make(chan struct{})}
 	if err := s.start(device); err != nil {
 		s.release()
 		return nil, err
@@ -56,27 +58,27 @@ func (s *stream) start(device *wca.IMMDevice) error {
 	return nil
 }
 
-// drain hands every packet waiting in the device buffer to the blocker.
-func (s *stream) drain() error {
-	for {
+// drain hands every packet waiting in the device buffer to the blocker and says how many there were.
+func (s *stream) drain() (int, error) {
+	for packets := 0; ; packets++ {
 		var waiting uint32
 		if err := s.capture.GetNextPacketSize(&waiting); err != nil {
-			return err
+			return packets, err
 		}
 		if waiting == 0 {
-			return nil
+			return packets, nil
 		}
 		var data *byte
 		var frames, flags uint32
 		if err := s.capture.GetBuffer(&data, &frames, &flags, nil, nil); err != nil {
-			return err
+			return packets, err
 		}
 		s.buf = append(s.buf[:0], make([]float32, frames)...)
 		if flags&silentBufferFlag == 0 && frames > 0 {
 			copy(s.buf, unsafe.Slice((*float32)(unsafe.Pointer(data)), frames))
 		}
 		if err := s.capture.ReleaseBuffer(frames); err != nil {
-			return err
+			return packets, err
 		}
 		s.blocks.push(s.buf)
 	}

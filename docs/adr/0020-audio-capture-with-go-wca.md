@@ -21,8 +21,8 @@ The owner approved replacing malgo with go-wca on 2026-11-10.
 1. Capture uses `github.com/moutend/go-wca` v0.3.0 with `github.com/go-ole/go-ole` and `golang.org/x/sys/windows` (BSD-3-Clause, The Go Authors), behind `infrastructure/capture`, in files built only on Windows.
 2. A stream opens one endpoint by its explicit WASAPI ID, found by enumerating active capture endpoints, in shared mode asking for IEEE float, 1 channel, 48 kHz with `EVENTCALLBACK | AUTOCONVERTPCM | SRC_DEFAULT_QUALITY`, so Windows converts from whatever the device delivers and never reroutes the stream to a new default.
 3. All streaming runs on one goroutine locked to its OS thread, started through `platform/async` and initialised for COM; open and close requests are handed to it. Listing runs on the caller's thread with its own COM initialisation.
-4. No device notifications are registered. The recorder polls the list every 2 s, and a stream reports its own loss when a read fails.
-5. A `PROPVARIANT` read through go-wca's `String` is not freed again: `String` frees it.
+4. No device notifications are registered. The recorder polls the list every 2 s, and a stream reports its own loss when a read fails or when it delivers no packet for 3 s: the capture loop wakes every second even without a buffer event, so a driver that hangs silently after sleep is caught too.
+5. A `PROPVARIANT` read through go-wca's `String` is not freed again: `String` frees it. It is read only when it holds a string, because `String` reads any value as a string pointer, and an endpoint's ID is read with a direct `GetId` call, because go-wca's `GetId` reads its result even when the call failed.
 
 ## Consequences
 

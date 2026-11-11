@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"runtime"
+	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/go-ole/go-ole"
 	"github.com/moutend/go-wca/pkg/wca"
@@ -34,9 +36,17 @@ const (
 	silentBufferFlag = 0x2
 	// jobQueue holds requests until the loop wakes; the recorder sends at most one at a time.
 	jobQueue = 8
+	// wakeEveryMs wakes the loop even when the device sends nothing, so a stream that went quiet is noticed.
+	wakeEveryMs = 1000
+	// unnamed is what the page shows for a mic whose name Windows will not give.
+	unnamed = "Microphone"
 )
 
-var errNotRunning = errors.New("capture: the capture loop is not running")
+var (
+	errNotRunning = errors.New("capture: the capture loop is not running")
+	errStalled    = errors.New("capture: the mic delivered nothing for 3 s")
+	errNoID       = errors.New("capture: the mic returned no id")
+)
 
 // Capture owns the mic streams. COM objects belong to the thread that made them, so every stream lives on Run's
 // locked thread; Open and Close hand their work to it.
@@ -97,7 +107,7 @@ func (c *Capture) loop(ctx context.Context) error {
 		if c.current != nil {
 			handles = append(handles, c.current.event)
 		}
-		if _, err := windows.WaitForMultipleObjects(handles, false, windows.INFINITE); err != nil {
+		if _, err := windows.WaitForMultipleObjects(handles, false, wakeEveryMs); err != nil {
 			return fmt.Errorf("capture: wait: %w", err)
 		}
 		select {
@@ -125,7 +135,11 @@ func (c *Capture) drainCurrent() {
 	if c.current == nil {
 		return
 	}
-	if err := c.current.drain(); err != nil {
+	packets, err := c.current.drain()
+	if err == nil && c.current.watch.observe(packets, time.Now()) {
+		err = errStalled
+	}
+	if err != nil {
 		lost := c.current
 		c.logger.Warn("the mic stopped", "error", err, "invalidated", isInvalidated(err))
 		c.closeCurrent()
@@ -217,7 +231,9 @@ func (c *Capture) listDevices(enum *wca.IMMDeviceEnumerator) ([]application.Devi
 	defaultID := ""
 	var def *wca.IMMDevice
 	if enum.GetDefaultAudioEndpoint(wca.ECapture, wca.EConsole, &def) == nil {
-		_ = def.GetId(&defaultID)
+		if id, err := endpointID(def); err == nil {
+			defaultID = id
+		}
 		def.Release()
 	}
 	var devices []application.Device
@@ -232,14 +248,42 @@ func (c *Capture) listDevices(enum *wca.IMMDeviceEnumerator) ([]application.Devi
 func friendlyName(d *wca.IMMDevice) string {
 	var props *wca.IPropertyStore
 	if err := d.OpenPropertyStore(wca.STGM_READ, &props); err != nil {
-		return "Microphone"
+		return unnamed
 	}
 	defer props.Release()
 	var pv wca.PROPVARIANT
 	if err := props.GetValue(&wca.PKEY_Device_FriendlyName, &pv); err != nil {
-		return "Microphone"
+		return unnamed
+	}
+	return nameFrom(&pv)
+}
+
+// nameFrom reads the name only when it is a string: go-wca's String reads any value as a string pointer, so an
+// empty property would crash the app.
+func nameFrom(pv *wca.PROPVARIANT) string {
+	if pv.VT != ole.VT_LPWSTR || pv.Val == 0 {
+		return unnamed
 	}
 	return pv.String()
+}
+
+// endpointID calls IMMDevice::GetId directly: go-wca's GetId reads the returned string even when the call failed.
+func endpointID(d *wca.IMMDevice) (string, error) {
+	var id *uint16
+	hr, _, _ := syscall.SyscallN(d.VTable().GetId, uintptr(unsafe.Pointer(d)), uintptr(unsafe.Pointer(&id)))
+	return takeID(hr, id)
+}
+
+// takeID converts and frees the string GetId returned, and never touches it when the call failed.
+func takeID(hr uintptr, id *uint16) (string, error) {
+	if hr != 0 {
+		return "", fmt.Errorf("capture: mic id: %w", ole.NewError(hr))
+	}
+	if id == nil {
+		return "", errNoID
+	}
+	defer ole.CoTaskMemFree(uintptr(unsafe.Pointer(id)))
+	return windows.UTF16PtrToString(id), nil
 }
 
 // findDevice exists because go-wca's IMMDeviceEnumerator.GetDevice takes no ID.
@@ -278,8 +322,7 @@ func eachActive(enum *wca.IMMDeviceEnumerator, visit func(d *wca.IMMDevice, id s
 		if err := collection.Item(i, &d); err != nil {
 			return fmt.Errorf("capture: mic %d: %w", i, err)
 		}
-		var id string
-		err := d.GetId(&id)
+		id, err := endpointID(d)
 		keepGoing := err == nil && visit(d, id)
 		d.Release()
 		if !keepGoing && err == nil {
