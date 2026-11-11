@@ -50,6 +50,10 @@ type browseResponse struct {
 	Chosen bool   `json:"chosen"`
 }
 
+type levelResponse struct {
+	Level float64 `json:"level"`
+}
+
 type pingResponse struct {
 	App string `json:"app"`
 }

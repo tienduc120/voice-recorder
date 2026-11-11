@@ -25,6 +25,7 @@ const (
 )
 
 type fakeRecorder struct {
+	level  float64
 	status application.Status
 	browse application.BrowseResult
 	err    error
@@ -32,6 +33,8 @@ type fakeRecorder struct {
 }
 
 func (f *fakeRecorder) Status(context.Context) application.Status { return f.status }
+
+func (f *fakeRecorder) Level(context.Context) float64 { return f.level }
 
 func (f *fakeRecorder) ChangeSettings(_ context.Context, cmd application.SettingsCommand) (application.Status, error) {
 	f.calls = append(f.calls, fmt.Sprintf("settings %q %v", cmd.Folder, cmd.NoiseCleanup))
@@ -283,5 +286,15 @@ func TestThePageHasEveryControl(t *testing.T) {
 		if !strings.Contains(page, `id="`+id+`"`) {
 			t.Errorf("the page has no element with id %q", id)
 		}
+	}
+}
+
+func TestLevelIsServedOnItsOwn(t *testing.T) {
+	t.Parallel()
+
+	w := send(t, &fakeRecorder{level: 0.42}, http.MethodGet, "/api/level", "")
+
+	if got := decode(t, w); w.Code != http.StatusOK || got["level"] != 0.42 {
+		t.Errorf("level: %d %+v, want 200 and 0.42: the meter polls this many times a second", w.Code, got)
 	}
 }

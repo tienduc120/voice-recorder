@@ -280,3 +280,33 @@ func TestCancellingRunFinalisesAnOpenRecording(t *testing.T) {
 		}
 	})
 }
+
+func TestTheMeterFallsSmoothlyAfterALoudBlock(t *testing.T) {
+	t.Parallel()
+	synctest.Test(t, func(t *testing.T) {
+		d := newDeps(bubbleClock{})
+		rec, _ := startRecording(t, d)
+
+		d.capture.send(0.5)
+		synctest.Wait()
+		for range 10 {
+			d.capture.send(0)
+		}
+		synctest.Wait()
+
+		// 0.8997 for a 0.5 peak, less 10 blocks of 10 ms at 0.4 of the scale per second.
+		if got := rec.Level(t.Context()); got < 0.855 || got > 0.865 {
+			t.Errorf("level = %.4f, want about 0.86: a meter falls smoothly instead of dropping to zero", got)
+		}
+	})
+}
+
+func TestLevelIsZeroWhileIdle(t *testing.T) {
+	t.Parallel()
+
+	rec := application.NewRecorder(t.Context(), newDeps(meetingClock()).Deps())
+
+	if got := rec.Level(t.Context()); got != 0 {
+		t.Errorf("level = %v while idle, want 0", got)
+	}
+}

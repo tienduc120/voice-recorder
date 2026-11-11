@@ -24,6 +24,7 @@ var web embed.FS
 
 type Recorder interface {
 	Status(ctx context.Context) application.Status
+	Level(ctx context.Context) float64
 	ChangeSettings(ctx context.Context, cmd application.SettingsCommand) (application.Status, error)
 	Browse(ctx context.Context) (application.BrowseResult, error)
 	Start(ctx context.Context, cmd application.StartCommand) (application.Status, error)
@@ -51,6 +52,10 @@ func NewHandler(rec Recorder, logger *slog.Logger) http.Handler {
 	})
 	mux.HandleFunc("GET /api/status", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, statusOf(h.rec.Status(r.Context())))
+	})
+	// The meter polls this many times a second, so it carries one number instead of the whole status.
+	mux.HandleFunc("GET /api/level", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, levelResponse{Level: h.rec.Level(r.Context())})
 	})
 	mux.HandleFunc("POST /api/start", h.start)
 	mux.HandleFunc("POST /api/pause", h.command(h.rec.Pause))

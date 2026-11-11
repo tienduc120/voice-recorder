@@ -14,6 +14,11 @@ const (
 	// meterFloorDB is the quietest level the meter shows; the scale runs from it to 0 dBFS.
 	meterFloorDB = -60.0
 	decibels     = 20
+	// meterFallPerSecond lets the meter rise at once and fall at 24 dB/s, like a peak meter: a reading taken
+	// between two words still shows the last one.
+	meterFallPerSecond = 0.4
+	// sampleRate is the rate the Capture port promises.
+	sampleRate = 48000
 )
 
 // Run consumes frames and watches the mics until ctx ends, then finalises an open recording and returns nil.
@@ -46,7 +51,8 @@ func (r *Recorder) shutdown(ctx context.Context) {
 func (r *Recorder) consume(ctx context.Context, block []float32) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.level = meterLevel(block)
+	fall := meterFallPerSecond * float64(len(block)) / sampleRate
+	r.level = math.Max(meterLevel(block), math.Max(0, r.level-fall))
 	if r.session.State() != domain.Recording {
 		return
 	}
@@ -78,4 +84,14 @@ func meterLevel(block []float32) float64 {
 	}
 	level := (decibels*math.Log10(peak) - meterFloorDB) / -meterFloorDB
 	return math.Max(0, math.Min(1, level))
+}
+
+// Level is the input level for the meter, from 0 to 1, and 0 while idle.
+func (r *Recorder) Level(context.Context) float64 {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.file == nil {
+		return 0
+	}
+	return r.level
 }
