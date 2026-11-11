@@ -10,7 +10,7 @@ AI agents extend this base, so correctness must come from tools, not from prose 
 ## Decision
 
 1. **Enforcement first.** The base ships almost no features. Every rule has an enforcer and a fixture that proves the enforcer fires; a rule without both is advice, not a rule.
-2. **Go, latest stable.** `go 1.27.3` in `go.mod`; `GOTOOLCHAIN=auto` fetches it.
+2. **Go, latest stable.** `go 1.27.4` in `go.mod`; `GOTOOLCHAIN=auto` fetches it.
 3. **No Make.** All commands go through `agentctl`, a Go program in `tools/`. It behaves the same on Windows, Linux, and CI, is unit tested, and gives agents one self-describing command surface.
 4. **Two modules joined by `go.work`.** The root module holds services, platform, and contracts. `tools/` has its own `go.mod` so tool dependencies never reach a service.
 5. **One bounded context per service**, one deployable per context, inside a compiler-private `internal/`. Layers: `domain`, `application`, `infrastructure`, `interfaces`. Cross-service imports are limited to `contracts/` and `platform/`.
